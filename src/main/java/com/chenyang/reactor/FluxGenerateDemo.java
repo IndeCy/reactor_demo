@@ -4,6 +4,8 @@ import org.reactivestreams.Subscription;
 import reactor.core.publisher.BaseSubscriber;
 import reactor.core.publisher.Flux;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 /**
  * @Package: com.chenyang.reactor
  * @Author: chenyang
@@ -13,7 +15,7 @@ import reactor.core.publisher.Flux;
 public class FluxGenerateDemo {
 
     public static void main(String[] args) {
-        test();
+        test2();
     }
 
     static void test() {
@@ -30,6 +32,29 @@ public class FluxGenerateDemo {
             @Override
             protected void hookOnSubscribe(Subscription subscription) {
                 System.out.println("subscribe");
+                request(1);
+            }
+
+            @Override
+            protected void hookOnNext(String value) {
+                System.out.println(value);
+                request(1);
+            }
+        });
+    }
+
+    static void test2(){
+        Flux<String> flux = Flux.generate(AtomicInteger::new,
+                (state, sink) -> {
+                    int i = state.getAndIncrement();
+                    sink.next("3 x " + i + " = " + 3 * i);
+                    if (i == 10) sink.complete();
+                    return state;
+                }, state -> System.out.println("last state" + state.get()));
+        flux.subscribe(new BaseSubscriber<String>() {
+            @Override
+            protected void hookOnSubscribe(Subscription subscription) {
+                System.out.println("subscribe in ");
                 request(1);
             }
 
